@@ -2,8 +2,13 @@ import os
 import google.generativeai as genai
 import pandas as pd
 import numpy as np
-from typing import Tuple, Optional, Dict, List
+from typing import Dict
 import json
+import re
+# Import from our modular files
+from data_generator import generate_test_data
+from golden_model import reference_solution
+from grader import grade_solution
 
 # Configure Gemini
 GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
@@ -35,136 +40,7 @@ Requirements:
 - Return the cleaned DataFrame
 """
 
-def generate_test_data(seed: int = 42) -> pd.DataFrame:
-    """Generate synthetic test data with various edge cases."""
-    np.random.seed(seed)
-    n_rows = 10
-    
-    # Generate base data
-    df = pd.DataFrame({
-        'age': np.random.normal(45, 20, n_rows),  # Some will be > 100
-        'height': np.random.normal(170, 15, n_rows),
-        'weight': np.random.normal(70, 15, n_rows)
-    })
-    
-    # Add invalid ages (>100)
-    invalid_indices = np.random.choice(n_rows, 5, replace=False)
-    df.loc[invalid_indices[:3], 'age'] = np.random.uniform(101, 120, 3)
-    
-    # Add NaN values
-    df.loc[invalid_indices[3:], 'age'] = np.nan
-    df.loc[np.random.choice(n_rows, 3), 'height'] = np.nan
-    df.loc[np.random.choice(n_rows, 3), 'weight'] = np.nan
-    
-    return df
-
-def grade_solution(submission_df: pd.DataFrame, reference_df: pd.DataFrame) -> Tuple[float, str]:
-    """Grade the submission against reference solution with stricter criteria."""
-    if submission_df is None:
-        return 0.0, "No DataFrame returned"
-        
-    # Print both DataFrames for comparison
-    print("\nReference DataFrame (Original):")
-    print("="*50)
-    print(reference_df)
-    
-    print("\nSubmission DataFrame (After Pipeline):")
-    print("="*50)
-    print(submission_df)
-    print("\n")
-        
-    score = 0.0
-    messages = []
-    
-    # Check 1: Basic DataFrame validity and shape
-    if not all(col in submission_df.columns for col in ['age', 'height', 'weight']):
-        return 0.0, "Missing required columns"
-    
-    # Check 2: Age filtering (0.2 points)
-    age_valid = True
-    if submission_df['age'].max() <= 100:
-        if not submission_df['age'].isna().any():
-            score += 0.2
-            messages.append("✓ Age filtering correct")
-        else:
-            age_valid = False
-            messages.append("✗ NaN values in age column")
-    else:
-        age_valid = False
-        messages.append("✗ Ages > 100 present")
-    
-    # Check 3: Missing value imputation (0.2 points)
-    if not submission_df.isna().any().any():
-        # Verify means are close to reference solution
-        height_mean_diff = abs(submission_df['height'].mean() - reference_df.loc[reference_df['age'] <= 100, 'height'].mean())
-        weight_mean_diff = abs(submission_df['weight'].mean() - reference_df.loc[reference_df['age'] <= 100, 'weight'].mean())
-        
-        if height_mean_diff < 1.0 and weight_mean_diff < 1.0:
-            score += 0.2
-            messages.append("✓ Missing values imputed correctly")
-        else:
-            messages.append("✗ Imputed values deviate from expected means")
-    else:
-        messages.append("✗ Missing values remain")
-    
-    # Check 4: Standardization (0.3 points)
-    tolerance = 0.005  # Stricter tolerance
-    standardization_score = 0.0
-    
-    for col in ['age', 'height', 'weight']:
-        mean = submission_df[col].mean()
-        std = submission_df[col].std()
-        if abs(mean) < tolerance and abs(1 - std) < tolerance:
-            standardization_score += 0.1
-            messages.append(f"✓ {col} standardized correctly")
-        else:
-            messages.append(f"✗ {col}: mean={mean:.4f}, std={std:.4f}")
-    
-    score += standardization_score
-    
-    # Check 5: Data integrity (0.3 points)
-    try:
-        # Check row count is appropriate after filtering
-        expected_rows = len(reference_df[reference_df['age'] <= 100])
-        if len(submission_df) == expected_rows:
-            score += 0.15
-            messages.append("✓ Correct number of rows after filtering")
-        else:
-            messages.append("✗ Incorrect number of rows")
-        
-        # Check data hasn't been unnecessarily modified
-        if age_valid and all(submission_df.index == range(len(submission_df))):
-            score += 0.15
-            messages.append("✓ Index properly reset")
-        else:
-            messages.append("✗ Index issues or data integrity problems")
-    except:
-        messages.append("✗ Error checking data integrity")
-    
-    return score, "\n".join(messages)
-
-def reference_solution(df: pd.DataFrame) -> pd.DataFrame:
-    """Reference implementation of the data cleaning task."""
-    # Make a copy to avoid modifying original
-    cleaned_df = df.copy()
-    
-    # 1. Remove invalid ages
-    valid_age_mask = (cleaned_df['age'].notna()) & (cleaned_df['age'] <= 100)
-    cleaned_df = cleaned_df[valid_age_mask].reset_index(drop=True)
-    
-    # 2. Fill missing values
-    for col in ['height', 'weight']:
-        mean_val = cleaned_df[col].mean()
-        cleaned_df.loc[cleaned_df[col].isna(), col] = mean_val
-    
-    # 3. Standardize columns
-    for col in ['age', 'height', 'weight']:
-        mean = cleaned_df[col].mean()
-        std = cleaned_df[col].std()
-        if std != 0:
-            cleaned_df[col] = (cleaned_df[col] - mean) / std
-    
-    return cleaned_df
+# Functions are now imported from their respective modules
 
 def extract_code_from_response(response_text: str) -> str:
     """Extract Python code from LLM response."""
