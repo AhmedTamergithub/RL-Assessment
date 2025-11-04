@@ -110,7 +110,7 @@ python assessment.py --num_trials 5
 ## 📊 Key Metrics
 
 - **Score Range**: 0.0 - 1.0
-- **Pass Threshold**: ≥ 0.9
+- **Pass Threshold**: ≥ 0.5
 - **Tracked Metrics**:
   - Average score
   - Pass rate
