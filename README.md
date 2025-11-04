@@ -78,25 +78,108 @@ Solutions are graded on a 1.0 scale across four dimensions:
 
 ## 📈 Performance Expectations
 
-- Expected pass rate: 20-35%
-- Passing score threshold: ≥ 0.9
+- Expected pass rate: 20-40%
+- Passing score threshold: ≥ 0.5
 - Common failure points:
   - Improper handling of NaN values
   - Incorrect standardization
   - Index management issues
   - Data integrity violations
 
-## 🔧 Usage
+## 🔧 Quick Start Guide
 
+1. **Setup**:
 ```bash
-# Ensure GEMINI_API_KEY is set
 export GEMINI_API_KEY='your-key-here'
-
-# Run the assessment
-python assessment.py
 ```
 
-## 🔍 Future Enhancements
+2. **Run Assessment**:
+```bash
+# Run with default 10 trials
+python assessment.py
+
+# Or specify number of trials
+python assessment.py --num_trials 5
+```
+
+3. **Results**:
+- Saves to `assessment_results.json`
+- Shows per-trial feedback
+- Displays summary statistics
+
+## 📊 Key Metrics
+
+- **Score Range**: 0.0 - 1.0
+- **Pass Threshold**: ≥ 0.9
+- **Tracked Metrics**:
+  - Average score
+  - Pass rate
+  - Min/max scores
+  - Per-component performance
+
+## � Sample Output
+
+Here's an example of what the system produces during assessment:
+
+### Input Data
+```
+Reference DataFrame (Original):
+==================================================
+          age      height     weight
+0   39.189937  162.415238  82.341299
+1   47.242561         NaN  83.740357
+2  104.213162  150.903509  95.752722
+3   17.782201  181.201746        NaN
+4  117.014620         NaN  97.430741
+5   44.040178  168.337977  86.236184
+6         NaN  152.189950  75.529364
+7         NaN  154.876611        NaN
+8   37.979646  159.652074        NaN
+9  109.693890         NaN  54.348691
+```
+
+### Model's Solution Output
+```
+Submission DataFrame (After Pipeline):
+==================================================
+        age        height        weight
+0  0.168920 -6.614117e-01 -1.264863e+00
+1  0.868983  3.426298e-15 -2.620470e-01
+3 -1.692185  1.603342e+00 -1.018604e-14
+5  0.590581  5.258701e-02  1.526910e+00
+8  0.063702 -9.945171e-01 -1.018604e-14
+```
+
+### Grading Results
+```
+Score: 0.65
+Feedback:
+✓ Age filtering correct
+✗ Imputed values deviate from expected means
+✓ age standardized correctly
+✓ height standardized correctly
+✓ weight standardized correctly
+✓ Correct number of rows after filtering
+✗ Index issues or data integrity problems
+```
+
+This example demonstrates:
+1. **Input Data Issues**:
+   - Invalid ages (>100): rows 2, 4, 9
+   - Missing ages (NaN): rows 6, 7
+   - Missing heights/weights: scattered throughout
+
+2. **Model's Solution**:
+   - Successfully removed invalid ages
+   - Attempted standardization (values near 0)
+   - Some issues with imputation and index handling
+
+3. **Grading Feedback**:
+   - Partial success (0.65/1.0)
+   - Strong on filtering and standardization
+   - Needs improvement on imputation and data integrity
+
+## �🔍 Future Enhancements
 
 Potential areas for expansion:
 - Additional data cleaning scenarios

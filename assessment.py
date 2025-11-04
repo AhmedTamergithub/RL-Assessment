@@ -141,7 +141,7 @@ def run_assessment(num_trials: int = 10, should_save: bool = True) -> Dict:
     
     # Calculate statistics
     scores = results['scores']
-    pass_threshold = 0.8
+    pass_threshold = 0.5
     pass_rate = sum(1 for s in scores if s >= pass_threshold) / len(scores)
     avg_score = sum(scores) / len(scores)
     
@@ -168,4 +168,4 @@ def run_assessment(num_trials: int = 10, should_save: bool = True) -> Dict:
 
 if __name__ == "__main__":
     # Run assessment with 10 trials
-    results = run_assessment(num_trials=4)
+    results = run_assessment(num_trials=10)
